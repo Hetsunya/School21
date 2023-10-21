@@ -53,8 +53,6 @@ void display_file(char *filename, int flags) {
     int prev_blank = 0;
 
     while (fgets(line, sizeof(line), file)) {
-        line_number++;
-
         if (flags & FLAG_SQUEEZE_BLANK) {
             if (line[0] == '\n') {
                 if (prev_blank) {
@@ -84,6 +82,12 @@ void display_file(char *filename, int flags) {
             }
             fputs(line, stdout);
         }
+
+        if (flags & FLAG_DISPLAY_EOL) {
+            printf("$");
+        }
+
+        line_number++;
     }
 
     fclose(file);
