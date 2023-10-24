@@ -64,27 +64,39 @@ void display_file(char *filename, int flags) {
             }
         }
 
-        if (flags & FLAG_DISPLAY_TABS) {
-            for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == '\t') {
-                    if (flags & FLAG_NUMBER_NONBLANK) {
+        switch (flags) {
+            case FLAG_DISPLAY_TABS | FLAG_NUMBER_NONBLANK | FLAG_DISPLAY_EOL:
+                for (int i = 0; line[i] != '\0'; i++) {
+                    if (line[i] == '\t') {
                         printf("%d^I", line_number);
                     } else {
-                        printf("^I");
+                        putchar(line[i]);
                     }
-                } else {
-                    putchar(line[i]);
                 }
-            }
-        } else {
-            if (flags & FLAG_NUMBER_NONBLANK) {
-                printf("%d\t", line_number);
-            }
-            fputs(line, stdout);
-        }
+                printf("$");
+                break;
 
-        if (flags & FLAG_DISPLAY_EOL) {
-            printf("$");
+            case FLAG_DISPLAY_TABS | FLAG_NUMBER_NONBLANK:
+                for (int i = 0; line[i] != '\0'; i++) {
+                    if (line[i] == '\t') {
+                        printf("%d^I", line_number);
+                    } else {
+                        putchar(line[i]);
+                    }
+                }
+                break;
+
+            // Add cases for other flag combinations as needed
+
+            default:
+                if (flags & FLAG_NUMBER_NONBLANK) {
+                    printf("%d\t", line_number);
+                }
+                fputs(line, stdout);
+                if (flags & FLAG_DISPLAY_EOL) {
+                    printf("$");
+                }
+                break;
         }
 
         line_number++;
@@ -92,6 +104,7 @@ void display_file(char *filename, int flags) {
 
     fclose(file);
 }
+
 
 int main(int argc, char *argv[]) {
     int file_arg_start = parse_flags(argc, argv);
