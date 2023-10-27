@@ -21,13 +21,13 @@ int parse_flags(int argc, char *argv[]) {
             if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--number-nonblank") == 0) {
                 flags |= FLAG_NUMBER_NONBLANK;
             } else if (strcmp(argv[i], "-e") == 0) {
-                flags |= (FLAG_DISPLAY_EOL | FLAG_NUMBER_NONBLANK);
+                flags |= FLAG_DISPLAY_EOL;
             } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--number") == 0) {
                 flags |= FLAG_NUMBER_LINES;
             } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--squeeze-blank") == 0) {
                 flags |= FLAG_SQUEEZE_BLANK;
             } else if (strcmp(argv[i], "-t") == 0) {
-                flags |= (FLAG_DISPLAY_TABS | FLAG_NUMBER_NONBLANK);
+                flags |= FLAG_DISPLAY_TABS;
             } else {
                 printf("Unknown option: %s\n", argv[i]);
                 display_usage();
@@ -51,6 +51,7 @@ void display_file(char *filename, int flags) {
     char line[1024];
     int line_number = 0;
     int prev_blank = 0;
+    int ncount = 0;
 
     while (fgets(line, sizeof(line), file)) {
         if (flags & FLAG_SQUEEZE_BLANK) {
@@ -63,30 +64,55 @@ void display_file(char *filename, int flags) {
                 prev_blank = 0;
             }
         }
-
+        
         switch (flags) {
-            case FLAG_DISPLAY_TABS | FLAG_NUMBER_NONBLANK | FLAG_DISPLAY_EOL:
+            // -b 
+            case  FLAG_NUMBER_NONBLANK:
+                if (line[0] != '\n') {
+                        printf("\t%d", line_number + (1 - ncount));
+                        putchar(line[0]);
+                    }
+                else {
+                    ncount++;
+                    putchar('\n');
+                }
+
+                for (int i = 1; line[i] != '\0'; i++) {
+                        putchar(line[i]);
+                }
+                break;
+            // -e
+            case  FLAG_DISPLAY_EOL:
                 for (int i = 0; line[i] != '\0'; i++) {
-                    if (line[i] == '\t') {
-                        printf("%d^I", line_number);
+                    if (line[i] == '\n') {
+                        printf("$");
+                        putchar('\n');
                     } else {
                         putchar(line[i]);
                     }
                 }
-                printf("$");
                 break;
-
-            case FLAG_DISPLAY_TABS | FLAG_NUMBER_NONBLANK:
+            // -t 
+            case FLAG_DISPLAY_TABS:
                 for (int i = 0; line[i] != '\0'; i++) {
                     if (line[i] == '\t') {
-                        printf("%d^I", line_number);
+                        printf("^I");
                     } else {
                         putchar(line[i]);
                     }
                 }
                 break;
-
-            // Add cases for other flag combinations as needed
+            // -n
+            case FLAG_NUMBER_LINES:
+                if (line[0] != '\n')
+                    printf("\t %d ", line_number + 1);
+                else
+                    printf("\t %d \n", line_number + 1);
+                for (int i = 1; line[i] != '\0'; i++) {
+                        putchar(line[i]);
+                }
+                break;
+            // Add cases for other flag combinations
 
             default:
                 if (flags & FLAG_NUMBER_NONBLANK) {
@@ -121,3 +147,4 @@ int main(int argc, char *argv[]) {
 
     return 0;
 }
+ 
