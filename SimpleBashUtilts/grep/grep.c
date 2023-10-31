@@ -1,88 +1,216 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pcre.h>
 
-void print_usage() {
-    printf("Usage: s21_grep [-e pattern] [-i] [-v] [-c] [-l] [-n] [file ...]\n");
+#define MAX_LINE_LENGTH 4096
+
+#define FLAG_IGNORE_CASE 1
+#define FLAG_INVERT_MATCH 2
+#define FLAG_COUNT_ONLY 4
+#define FLAG_MATCHING_FILES_ONLY 8
+#define FLAG_DISPLAY_LINE_NUMBER 16
+#define FLAG_SUPPRESS_ERRORS 32
+#define FLAG_FROM_FILE 64
+#define FLAG_ONLY_MATCHING_PARTS 128
+
+int flags = 0;
+
+void display_usage() {
+    printf("Usage: s21_grep [options] pattern [file...]\n");
+    printf("Options:\n");
+    printf("  -e pattern              use pattern as the expression to match\n");
+    printf("  -i                      ignore case distinctions in both the PATTERN and the input files\n");
+    printf("  -v                      select non-matching lines\n");
+    printf("  -c                      print only a count of matching lines per FILE\n");
+    printf("  -l                      print only names of FILEs containing matches\n");
+    printf("  -n                      print line number with output lines\n");
+    printf("  -h                      suppress the prefixing of file names on output\n");
+    printf("  -s                      suppress error messages about nonexistent or unreadable files\n");
+    printf("  -f file                 read patterns from file\n");
+    printf("  -o                      print only the matched (non-empty) parts of a matching line\n");
 }
 
-int str_contains(const char *str, const char *pattern) {
-    return strstr(str, pattern) != NULL;
-}
-
-int main(int argc, char *argv[]) {
-    if (argc < 2) {
-        print_usage();
-        return 1;
+char *read_pattern_from_file(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Error opening pattern file");
+        exit(EXIT_FAILURE);
     }
 
-    char *pattern = NULL;
-    int case_insensitive = 0;
-    int invert_match = 0;
-    int count_only = 0;
-    int print_filename = 0;
-    int print_line_number = 0;
+    // Determine the size of the file
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-    // Парсинг аргументов командной строки
-    for (int i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "-e") == 0 && i + 1 < argc) {
-            pattern = argv[++i];
-        } else if (strcmp(argv[i], "-i") == 0) {
-            case_insensitive = 1;
-        } else if (strcmp(argv[i], "-v") == 0) {
-            invert_match = 1;
-        } else if (strcmp(argv[i], "-c") == 0) {
-            count_only = 1;
-        } else if (strcmp(argv[i], "-l") == 0) {
-            print_filename = 1;
-        } else if (strcmp(argv[i], "-n") == 0) {
-            print_line_number = 1;
+    // Allocate a buffer for reading the file
+    char *buffer = (char *)malloc(size + 1);
+    if (!buffer) {
+        perror("Memory allocation error");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // Read the contents of the file into the buffer
+    fread(buffer, 1, size, file);
+    fclose(file);
+
+    // Add the null terminator
+    buffer[size] = '\0';
+
+    return buffer;
+}
+
+int parse_flags(int argc, char *argv[], char **pattern) {
+    *pattern = NULL;
+
+    for (int i = 1; i < argc; i++) {
+        if (argv[i][0] == '-') {
+            if (strcmp(argv[i], "-e") == 0 && i + 1 < argc) {
+                *pattern = argv[++i];
+                flags |= FLAG_FROM_FILE;
+            } else if (strcmp(argv[i], "-i") == 0) {
+                flags |= FLAG_IGNORE_CASE;
+            } else if (strcmp(argv[i], "-v") == 0) {
+                flags |= FLAG_INVERT_MATCH;
+            } else if (strcmp(argv[i], "-c") == 0) {
+                flags |= FLAG_COUNT_ONLY;
+            } else if (strcmp(argv[i], "-l") == 0) {
+                flags |= FLAG_MATCHING_FILES_ONLY;
+            } else if (strcmp(argv[i], "-n") == 0) {
+                flags |= FLAG_DISPLAY_LINE_NUMBER;
+            } else if (strcmp(argv[i], "-h") == 0) {
+                flags |= FLAG_SUPPRESS_ERRORS;
+            } else if (strcmp(argv[i], "-s") == 0) {
+                flags |= FLAG_SUPPRESS_ERRORS;
+            } else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
+                *pattern = read_pattern_from_file(argv[++i]);
+                flags |= FLAG_FROM_FILE;
+            } else if (strcmp(argv[i], "-o") == 0) {
+                flags |= FLAG_ONLY_MATCHING_PARTS;
+            } else {
+                printf("Unknown option: %s\n", argv[i]);
+                display_usage();
+                exit(EXIT_FAILURE);
+            }
         } else {
-            // Обработка файла
-            FILE *file = fopen(argv[i], "r");
-            if (file == NULL) {
-                perror("Error opening file");
-                return 1;
-            }
-
-            char *line = NULL;
-            size_t len = 0;
-            int line_number = 0;
-            int match_count = 0;
-
-            // Обработка каждой строки файла
-            while (getline(&line, &len, file) != -1) {
-                line_number++;
-
-                int match = str_contains(line, pattern);
-
-                if ((match && !invert_match) || (!match && invert_match)) {
-                    if (count_only) {
-                        match_count++;
-                    } else {
-                        if (print_filename) {
-                            printf("%s\n", argv[i]);
-                            break; // прерываем после первого совпадения для -l
-                        }
-
-                        if (print_line_number) {
-                            printf("%d:", line_number);
-                        }
-
-                        printf("%s", line);
-                    }
-                }
-            }
-
-            if (count_only) {
-                printf("%d\n", match_count);
-            }
-
-            fclose(file);
-            free(line);
+            // Pattern argument found, stop processing options
+            *pattern = argv[i];
+            return i + 1;
         }
     }
 
-    return 0;
+    return argc; // No pattern found
 }
-    
+
+void grep_file(char *filename, char *pattern) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        if (!(flags & FLAG_SUPPRESS_ERRORS)) {
+            perror("Error opening file");
+        }
+        return;
+    }
+
+    char line[MAX_LINE_LENGTH];
+    int line_number = 1;
+    int match_count = 1;
+    pcre *re;
+
+    const char *error;
+    int erroffset;
+    int options = 0;
+
+    if (flags & FLAG_IGNORE_CASE) {
+        options |= PCRE_CASELESS;
+    }
+
+    if (flags & FLAG_FROM_FILE) {
+        // Use the pattern read from the file
+        re = pcre_compile(pattern, options, &error, &erroffset, NULL);
+    } else {
+        // Use the pattern directly
+        re = pcre_compile(pattern, options, &error, &erroffset, NULL);
+    }
+
+    if (re == NULL) {
+        fprintf(stderr, "Error in regex at offset %d: %s\n", erroffset, error);
+        fclose(file);
+        return;
+    }
+
+    while (fgets(line, sizeof(line), file) != NULL) {
+        int match;
+        int ovector[30];
+        int rc = pcre_exec(re, NULL, line, strlen(line), 0, 0, ovector, sizeof(ovector) / sizeof(int));
+
+        if (flags & FLAG_INVERT_MATCH) {
+            match = (rc == PCRE_ERROR_NOMATCH);
+        } else {
+            match = (rc >= 0);
+        }
+
+        if (match) {
+            match_count++;
+
+            if (flags & FLAG_COUNT_ONLY) {
+                break;
+            } else if (flags & FLAG_MATCHING_FILES_ONLY) {
+                if (flags & FLAG_SUPPRESS_ERRORS) {
+                    printf("%s\n", filename);
+                    fclose(file);
+                    return;
+                } else {
+                    printf("%s\n", filename);
+                    break;
+                }
+            } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
+                printf("%d:", line_number);
+            }
+
+            if (flags & FLAG_ONLY_MATCHING_PARTS) {
+                int start = ovector[0];
+                int end = ovector[1];
+                printf("%.*s", end - start, line + start);
+            } else {
+                printf("%s", line);
+            }
+        }
+
+        line_number++;
+    }
+
+    if (flags & FLAG_COUNT_ONLY) {
+        printf("%d\n", match_count);
+    }
+
+    fclose(file);
+    pcre_free(re);
+}
+
+int main(int argc, char *argv[]) {
+    char *pattern;
+    int file_arg_start = parse_flags(argc, argv, &pattern);
+
+    if (!pattern) {
+        printf("Pattern not specified.\n");
+        display_usage();
+        return EXIT_FAILURE;
+    }
+
+    if (file_arg_start == argc) {
+        // No file provided, read from stdin
+        grep_file("/dev/stdin", pattern);
+    } else {
+        // Display each specified file
+        for (int i = file_arg_start; i < argc; i++) {
+            grep_file(argv[i], pattern);
+        }
+    }
+
+    if (flags & FLAG_FROM_FILE) {
+        free(pattern);
+    }
+
+    return EXIT_SUCCESS;
+}

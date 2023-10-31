@@ -54,11 +54,10 @@ void display_file(char *filename, int flags) {
     int ncount = 0;
 
     while (fgets(line, sizeof(line), file)) {
-        //-s
         if (flags & FLAG_SQUEEZE_BLANK) {
             if (line[0] == '\n') {
                 if (prev_blank) {
-                    continue;
+                    continue;  // Skip multiple adjacent blank lines
                 }
                 prev_blank = 1;
             } else {
@@ -105,14 +104,18 @@ void display_file(char *filename, int flags) {
                 break;
             // -n
             case FLAG_NUMBER_LINES:
-                if (line[0] != '\n')
-                    printf("\t %d ", line_number + 1);
+                if (line[0] != '\n'){
+                    printf("     %d	", line_number + 1);
+                    putchar(line[0]);
+                }
+                    
                 else
-                    printf("\t %d \n", line_number + 1);
+                    printf("     %d	\n", line_number + 1);
                 for (int i = 1; line[i] != '\0'; i++) {
                         putchar(line[i]);
                 }
                 break;
+            // Add cases for other flag combinations
 
             default:
                 if (flags & FLAG_NUMBER_NONBLANK) {
@@ -136,8 +139,10 @@ int main(int argc, char *argv[]) {
     int file_arg_start = parse_flags(argc, argv);
 
     if (file_arg_start == argc) {
+        // No file provided, read from stdin
         display_file("/dev/stdin", flags);
     } else {
+        // Display each specified file
         for (int i = file_arg_start; i < argc; i++) {
             display_file(argv[i], flags);
         }
