@@ -66,32 +66,67 @@ int parse_flags(int argc, char *argv[], char **pattern) {
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-') {
-            if (strcmp(argv[i], "-e") == 0 && i + 1 < argc) {
-                *pattern = argv[++i];
-                flags |= FLAG_FROM_FILE;
-            } else if (strcmp(argv[i], "-i") == 0) {
-                flags |= FLAG_IGNORE_CASE;
-            } else if (strcmp(argv[i], "-v") == 0) {
-                flags |= FLAG_INVERT_MATCH;
-            } else if (strcmp(argv[i], "-c") == 0) {
-                flags |= FLAG_COUNT_ONLY;
-            } else if (strcmp(argv[i], "-l") == 0) {
-                flags |= FLAG_MATCHING_FILES_ONLY;
-            } else if (strcmp(argv[i], "-n") == 0) {
-                flags |= FLAG_DISPLAY_LINE_NUMBER;
-            } else if (strcmp(argv[i], "-h") == 0) {
-                flags |= FLAG_SUPPRESS_ERRORS;
-            } else if (strcmp(argv[i], "-s") == 0) {
-                flags |= FLAG_SUPPRESS_ERRORS;
-            } else if (strcmp(argv[i], "-f") == 0 && i + 1 < argc) {
-                *pattern = read_pattern_from_file(argv[++i]);
-                flags |= FLAG_FROM_FILE;
-            } else if (strcmp(argv[i], "-o") == 0) {
-                flags |= FLAG_ONLY_MATCHING_PARTS;
+            if (argv[i][1] == 'f') {
+                // Handle -f separately
+                if (argv[i][2] != '\0') {
+                    // Use the rest of the current argument as the file name
+                    *pattern = read_pattern_from_file(argv[i] + 2);
+                    flags |= FLAG_FROM_FILE;
+                } else if (i + 1 < argc && argv[i + 1][0] != '-') {
+                    // Use the next argument as the file name
+                    *pattern = read_pattern_from_file(argv[++i]);
+                    flags |= FLAG_FROM_FILE;
+                } else {
+                    printf("Option -f requires a file argument.\n");
+                    display_usage();
+                    exit(EXIT_FAILURE);
+                }
             } else {
-                printf("Unknown option: %s\n", argv[i]);
-                display_usage();
-                exit(EXIT_FAILURE);
+                // Handle other options
+                int j = 1;
+                while (argv[i][j] != '\0') {
+                    switch (argv[i][j]) {
+                        case 'e':
+                            if (i + 1 < argc) {
+                                *pattern = argv[++i];
+                                flags |= FLAG_FROM_FILE;
+                            } else {
+                                printf("Option -e requires an argument.\n");
+                                display_usage();
+                                exit(EXIT_FAILURE);
+                            }
+                            break;
+                        case 'i':
+                            flags |= FLAG_IGNORE_CASE;
+                            break;
+                        case 'v':
+                            flags |= FLAG_INVERT_MATCH;
+                            break;
+                        case 'c':
+                            flags |= FLAG_COUNT_ONLY;
+                            break;
+                        case 'l':
+                            flags |= FLAG_MATCHING_FILES_ONLY;
+                            break;
+                        case 'n':
+                            flags |= FLAG_DISPLAY_LINE_NUMBER;
+                            break;
+                        case 'h':
+                            flags |= FLAG_SUPPRESS_ERRORS;
+                            break;
+                        case 's':
+                            flags |= FLAG_SUPPRESS_ERRORS;
+                            break;
+                        case 'o':
+                            flags |= FLAG_ONLY_MATCHING_PARTS;
+                            break;
+                        default:
+                            printf("Unknown option: -%c\n", argv[i][j]);
+                            display_usage();
+                            exit(EXIT_FAILURE);
+                    }
+                    j++;
+                }
             }
         } else {
             // Pattern argument found, stop processing options
@@ -171,7 +206,7 @@ void grep_file(char *filename, char *pattern) {
             if (flags & FLAG_ONLY_MATCHING_PARTS) {
                 int start = ovector[0];
                 int end = ovector[1];
-                printf("%.*s", end - start, line + start);
+                printf("%.*s\n", end - start, line + start);
             } else {
                 printf("%s", line);
             }
