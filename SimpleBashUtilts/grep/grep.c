@@ -71,10 +71,12 @@ int parse_flags(int argc, char *argv[], char **pattern) {
                 if (argv[i][2] != '\0') {
                     // Use the rest of the current argument as the file name
                     *pattern = read_pattern_from_file(argv[i] + 2);
+                    printf("%s", *pattern);
                     flags |= FLAG_FROM_FILE;
                 } else if (i + 1 < argc && argv[i + 1][0] != '-') {
                     // Use the next argument as the file name
                     *pattern = read_pattern_from_file(argv[++i]);
+                    printf("%s", *pattern);
                     flags |= FLAG_FROM_FILE;
                 } else {
                     printf("Option -f requires a file argument.\n");
@@ -130,8 +132,11 @@ int parse_flags(int argc, char *argv[], char **pattern) {
             }
         } else {
             // Pattern argument found, stop processing options
-            *pattern = argv[i];
-            return i + 1;
+            if ((flags & FLAG_FROM_FILE) == 0){
+                *pattern = argv[i];
+                printf("%s exit from pars\n", argv[i]);
+                return i + 1;
+            }
         }
     }
 
@@ -139,6 +144,7 @@ int parse_flags(int argc, char *argv[], char **pattern) {
 }
 
 void grep_file(char *filename, char *pattern) {
+    printf("%s greping\n", pattern);
     FILE *file = fopen(filename, "r");
     if (!file) {
         if (!(flags & FLAG_SUPPRESS_ERRORS)) {
@@ -167,23 +173,25 @@ void grep_file(char *filename, char *pattern) {
         // Use the pattern directly
         re = pcre_compile(pattern, options, &error, &erroffset, NULL);
     }
-
     if (re == NULL) {
         fprintf(stderr, "Error in regex at offset %d: %s\n", erroffset, error);
         fclose(file);
         return;
     }
+    printf("%s = re", re);
 
     while (fgets(line, sizeof(line), file) != NULL) {
         int match;
         int ovector[30];
         int rc = pcre_exec(re, NULL, line, strlen(line), 0, 0, ovector, sizeof(ovector) / sizeof(int));
+        printf("%d = rc\n", rc);
 
         if (flags & FLAG_INVERT_MATCH) {
             match = (rc == PCRE_ERROR_NOMATCH);
         } else {
             match = (rc >= 0);
         }
+        printf("%d = match\n", match);
 
         if (match) {
             match_count++;
@@ -226,7 +234,7 @@ void grep_file(char *filename, char *pattern) {
 int main(int argc, char *argv[]) {
     char *pattern;
     int file_arg_start = parse_flags(argc, argv, &pattern);
-
+    printf("%s posle pars\n", pattern);
     if (!pattern) {
         printf("Pattern not specified.\n");
         display_usage();
@@ -235,16 +243,15 @@ int main(int argc, char *argv[]) {
 
     if (file_arg_start == argc) {
         // No file provided, read from stdin
+        printf("%s poisk1\n", pattern);
         grep_file("/dev/stdin", pattern);
+        
     } else {
         // Display each specified file
         for (int i = file_arg_start; i < argc; i++) {
+            printf("%s poisk2\n", pattern);
             grep_file(argv[i], pattern);
         }
-    }
-
-    if (flags & FLAG_FROM_FILE) {
-        free(pattern);
     }
 
     return EXIT_SUCCESS;
