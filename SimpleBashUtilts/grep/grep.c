@@ -4,6 +4,7 @@
 #include <pcre.h>
 
 #define MAX_LINE_LENGTH 4096
+#define MAX_PATTERNS 10
 
 #define FLAG_IGNORE_CASE 1
 #define FLAG_INVERT_MATCH 2
@@ -16,6 +17,9 @@
 #define FLAG_USE_PATTERN 256
 
 int flags = 0;
+char *patterns[MAX_PATTERNS];
+int pattern_count = 0;
+
 
 void display_usage() {
     printf("Usage: s21_grep [options] pattern [file...]\n");
@@ -92,7 +96,7 @@ int parse_flags(int argc, char *argv[], char **pattern) {
                     switch (argv[i][j]) {
                         case 'e':
                             if (i + 1 < argc) {
-                                *pattern = argv[++i];
+                                patterns[pattern_count++] = argv[++i];
                                 flags |= FLAG_USE_PATTERN;
                             } else {
                                 printf("Option -e requires an argument.\n");
@@ -100,7 +104,6 @@ int parse_flags(int argc, char *argv[], char **pattern) {
                                 exit(EXIT_FAILURE);
                             }
                             break;
-
                         case 'i':
                             flags |= FLAG_IGNORE_CASE;
                             break;
@@ -136,9 +139,17 @@ int parse_flags(int argc, char *argv[], char **pattern) {
         }
         
     }
-    printf("%d\n", no_flag);
-    if (no_flag == 0 || !(flags & FLAG_FROM_FILE) || !(flags & FLAG_USE_PATTERN)){
+    
+    // printf("%d\n", no_flag);
+    if (no_flag == 0 || !( (flags & FLAG_FROM_FILE) ||  (flags & FLAG_USE_PATTERN) )){
         *pattern = argv[1];
+    }
+
+    if (*pattern == NULL && !(flags & FLAG_FROM_FILE) && !(flags & FLAG_USE_PATTERN)) {
+        // Pattern not provided via -e, -f, or directly
+        printf("Pattern not specified.\n");
+        display_usage();
+        exit(EXIT_FAILURE);
     }
 
 
@@ -160,100 +171,100 @@ void grep_file(char *filename, char *pattern, int file_count) {
     int line_number = 1;
     int match_count = 1;
     pcre *re;
+    for (int p = 0; p < pattern_count; p++) {
 
-    const char *error;
-    int erroffset;
-    int options = 0;
+        const char *error;
+        int erroffset;
+        int options = 0;
 
-    if (flags & FLAG_IGNORE_CASE) {
-        options |= PCRE_CASELESS;
-    }
+        if (flags & FLAG_IGNORE_CASE) {
+            options |= PCRE_CASELESS;
+        }
 
-    if (flags & FLAG_FROM_FILE) {
-        // Use the pattern read from the file
-        re = pcre_compile(pattern, options, &error, &erroffset, NULL);
-    } else {
-        // Use the pattern directly
-        re = pcre_compile(pattern, options, &error, &erroffset, NULL);
-    }
-    // printf("%s = re", re);
-    // printf("%s = file", filename);
-    while (fgets(line, sizeof(line), file) != NULL) {
-        int match;
-        int ovector[30];
-        int rc = pcre_exec(re, NULL, line, strlen(line), 0, 0, ovector, sizeof(ovector) / sizeof(int));
-        // printf("%d = rc\n", rc);
-
-        if (flags & FLAG_INVERT_MATCH) {
-            match = (rc == PCRE_ERROR_NOMATCH);
+        if (flags & FLAG_FROM_FILE) {
+            re = pcre_compile(patterns[p], options, &error, &erroffset, NULL);
         } else {
-            match = (rc >= 0);
+            re = pcre_compile(patterns[p], options, &error, &erroffset, NULL);
         }
-        // printf("%d = match\n", match);
 
-        if(file_count > 1){
-            if (match) {
-                match_count++;
+        // printf("%s = re", re);
+        // printf("%s = file", filename);
+        while (fgets(line, sizeof(line), file) != NULL) {
+            int match;
+            int ovector[30];
+            int rc = pcre_exec(re, NULL, line, strlen(line), 0, 0, ovector, sizeof(ovector) / sizeof(int));
+            // printf("%d = rc\n", rc);
 
-                if (flags & FLAG_COUNT_ONLY) {
-                    break;
-                } else if (flags & FLAG_MATCHING_FILES_ONLY) {
-                    if (flags & FLAG_SUPPRESS_ERRORS) {
-                        printf("%s\n", filename);
-                        fclose(file);
-                        return;
-                    } else {
-                        printf("%s\n", filename);
+            if (flags & FLAG_INVERT_MATCH) {
+                match = (rc == PCRE_ERROR_NOMATCH);
+            } else {
+                match = (rc >= 0);
+            }
+            // printf("%d = match\n", match);
+
+            if(file_count > 1){
+                if (match) {
+                    match_count++;
+
+                    if (flags & FLAG_COUNT_ONLY) {
                         break;
+                    } else if (flags & FLAG_MATCHING_FILES_ONLY) {
+                        if (flags & FLAG_SUPPRESS_ERRORS) {
+                            printf("%s\n", filename);
+                            fclose(file);
+                            return;
+                        } else {
+                            printf("%s\n", filename);
+                            break;
+                        }
+                    } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
+                        printf("%d:", line_number);
                     }
-                } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
-                    printf("%d:", line_number);
-                }
 
-                if (flags & FLAG_ONLY_MATCHING_PARTS) {
-                    int start = ovector[0];
-                    int end = ovector[1];
-                    printf("%s:%.*s\n", filename, end - start, line + start);
-                } else {
-                    printf("%s:%s", filename, line);
+                    if (flags & FLAG_ONLY_MATCHING_PARTS) {
+                        int start = ovector[0];
+                        int end = ovector[1];
+                        printf("%s:%.*s\n", filename, end - start, line + start);
+                    } else {
+                        printf("%s:%s", filename, line);
+                    }
                 }
             }
-        }
-        else {
-            if (match) {
-                match_count++;
+            else {
+                if (match) {
+                    match_count++;
 
-                if (flags & FLAG_COUNT_ONLY) {
-                    break;
-                } else if (flags & FLAG_MATCHING_FILES_ONLY) {
-                    if (flags & FLAG_SUPPRESS_ERRORS) {
-                        // printf("%s\n", filename);
-                        fclose(file);
-                        return;
-                    } else {
-                        // printf("%s\n", filename);
+                    if (flags & FLAG_COUNT_ONLY) {
                         break;
+                    } else if (flags & FLAG_MATCHING_FILES_ONLY) {
+                        if (flags & FLAG_SUPPRESS_ERRORS) {
+                            // printf("%s\n", filename);
+                            fclose(file);
+                            return;
+                        } else {
+                            // printf("%s\n", filename);
+                            break;
+                        }
+                    } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
+                        printf("%d:", line_number);
                     }
-                } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
-                    printf("%d:", line_number);
-                }
 
-                if (flags & FLAG_ONLY_MATCHING_PARTS) {
-                    int start = ovector[0];
-                    int end = ovector[1];
-                    printf("%.*s\n", end - start, line + start);
-                } else {
-                    printf("%s", line);
+                    if (flags & FLAG_ONLY_MATCHING_PARTS) {
+                        int start = ovector[0];
+                        int end = ovector[1];
+                        printf("%.*s\n", end - start, line + start);
+                    } else {
+                        printf("%s", line);
+                    }
                 }
             }
+            line_number++;        // printf("konec");
         }
-        line_number++;        // printf("konec");
-    }
 
-    if (flags & FLAG_COUNT_ONLY) {
-        printf("%d\n", match_count);
+        if (flags & FLAG_COUNT_ONLY) {
+            printf("%d\n", match_count);
+        }
     }
-
     fclose(file);
     pcre_free(re);
 }
@@ -261,7 +272,13 @@ void grep_file(char *filename, char *pattern, int file_count) {
 int main(int argc, char *argv[]) {
     char *pattern;
     int file_arg_start = parse_flags(argc, argv, &pattern);
+
     // printf("%s posle pars\n", pattern);
+    if (pattern_count) {
+        for (int i = 0; i <= pattern_count; i++) {
+            printf("%s\n", patterns[i]);
+        }
+    }
     if (!pattern) {
         printf("Pattern not specified.\n");
         display_usage();
@@ -286,7 +303,7 @@ int main(int argc, char *argv[]) {
     //     }
     //     continue;
     // }
-    printf("%d\n", file_count);
+    // printf("%d\n", file_count);
 
     // printf("%d\n", flags_count);
 
@@ -295,6 +312,7 @@ int main(int argc, char *argv[]) {
         for (int i = 2; i < argc; i++) {
             grep_file(argv[i], pattern, file_count);
         }
+        return 0;
     }
 
     int flag_exit = 1;

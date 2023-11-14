@@ -1,0 +1,107 @@
+CC = gcc
+	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+grep: grep : No such file or directory
+Unknown option: -u
+Usage: s21_grep [options] pattern [file...]
+Options:
+  -e pattern              use pattern as the expression to match
+  -i                      ignore case distinctions in both the PATTERN and the input files
+  -v                      select non-matching lines
+  -c                      print only a count of matching lines per FILE
+  -l                      print only names of FILEs containing matches
+  -n                      print line number with output lines
+  -h                      suppress the prefixing of file names on output
+  -s                      suppress error messages about nonexistent or unreadable files
+  -f file                 read patterns from file
+  -o                      print only the matched (non-empty) parts of a matching line
+grep: CC : No such file or directory
+grep: CC : No such file or directory
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99
+LDFLAGS = -lpcre
+
+s21_grep: grep.c grep.h
+	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+
+clean:
+	rm -f s21_grep
+#ifndef GREP_H
+#define GREP_H
+
+void print_usage();
+
+#endif
+grep: CC : No such file or directory
+1
+1
+grep: CC : No such file or directory
+grep: CC : No such file or directory
+grep: gc : No such file or directory
+-o
+grep: CC : No such file or directory
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c99
+LDFLAGS = -lpcre
+
+s21_grep: grep.c grep.h
+	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+
+clean:
+	rm -f s21_grep
+#ifndef GREP_H
+#define GREP_H
+
+void print_usage();
+
+#endif
+grep: CC : No such file or directory
+Unknown option: -u
+Usage: s21_grep [options] pattern [file...]
+Options:
+  -e pattern              use pattern as the expression to match
+  -i                      ignore case distinctions in both the PATTERN and the input files
+  -v                      select non-matching lines
+  -c                      print only a count of matching lines per FILE
+  -l                      print only names of FILEs containing matches
+  -n                      print line number with output lines
+  -h                      suppress the prefixing of file names on output
+  -s                      suppress error messages about nonexistent or unreadable files
+  -f file                 read patterns from file
+  -o                      print only the matched (non-empty) parts of a matching line
+grep: -nl : No such file or directory
+grep: CC : No such file or directory
+grep: CC : No such file or directory
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+grep: CC : No such file or directory
+grep: CC : No such file or directory
+1
+1
+grep: CC : No such file or directory
+grep: grep : No such file or directory
+grep: CC : No such file or directory
+grep: grep : No such file or directory
+grep: CC : No such file or directory
+1:CC = gcc
+2:CFLAGS = -Wall -Wextra -std=c99
+3:LDFLAGS = -lpcre
+4:
+5:s21_grep: grep.c grep.h
+6:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+7:
+8:clean:
+9:	rm -f s21_grep
+grep: grep : No such file or directory
