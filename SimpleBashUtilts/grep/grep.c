@@ -13,6 +13,7 @@
 #define FLAG_SUPPRESS_ERRORS 32
 #define FLAG_FROM_FILE 64
 #define FLAG_ONLY_MATCHING_PARTS 128
+#define FLAG_EXTENDED_PATTERN 256
 
 int flags = 0;
 
@@ -54,10 +55,22 @@ char *read_pattern_from_file(const char *filename) {
     fread(buffer, 1, size, file);
     fclose(file);
 
+    // Handle the case where the file is empty
+    if (size == 0) {
+        fprintf(stderr, "Error: Pattern file is empty.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Trim trailing newline characters
+    while (size > 0 && (buffer[size - 1] == '\n' || buffer[size - 1] == '\r')) {
+        size--;
+    }
+
     buffer[size] = '\0';
 
     return buffer;
 }
+
 
 int parse_flags(int argc, char *argv[], char **pattern) {
     *pattern = NULL;
@@ -85,14 +98,13 @@ int parse_flags(int argc, char *argv[], char **pattern) {
                     exit(EXIT_FAILURE);
                 }
             } else {
-                // Handle other options
                 int j = 1;
                 while (argv[i][j] != '\0') {
                     switch (argv[i][j]) {
                         case 'e':
                             if (i + 1 < argc) {
                                 *pattern = argv[++i];
-                                flags |= FLAG_FROM_FILE;//HZ FIX IT 
+                                flags |= FLAG_EXTENDED_PATTERN; 
                             } else {
                                 printf("Option -e requires an argument.\n");
                                 display_usage();
@@ -142,7 +154,7 @@ int parse_flags(int argc, char *argv[], char **pattern) {
     return argc; // No pattern found
 }
 
-void grep_file(char *filename, char *pattern) {
+void grep_file(char *filename, char *pattern, int file_count) {
     // printf("%s greping\n", pattern);
     FILE *file = fopen(filename, "r");
     if (!file) {
@@ -187,36 +199,60 @@ void grep_file(char *filename, char *pattern) {
             match = (rc >= 0);
         }
         // printf("%d = match\n", match);
-
         if (match) {
-            match_count++;
-
-            if (flags & FLAG_COUNT_ONLY) {
-                break;
-            } else if (flags & FLAG_MATCHING_FILES_ONLY) {
-                if (flags & FLAG_SUPPRESS_ERRORS) {
-                    printf("%s\n", filename);
-                    fclose(file);
-                    return;
-                } else {
-                    printf("%s\n", filename);
+            if(file_count > 1 && !(flags & FLAG_SUPPRESS_ERRORS)){
+                match_count++;
+                printf("%s:", filename);
+                if (flags & FLAG_COUNT_ONLY) {
                     break;
+                } else if (flags & FLAG_MATCHING_FILES_ONLY) {
+                    if (flags & FLAG_SUPPRESS_ERRORS) {
+                        printf("%s\n", filename);
+                        fclose(file);
+                        return;
+                    } else {
+                        break;
+                    }
+                } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
+                    printf("%d:", line_number);
                 }
-            } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
-                printf("%d:", line_number);
-            }
 
-            if (flags & FLAG_ONLY_MATCHING_PARTS) {
-                int start = ovector[0];
-                int end = ovector[1];
-                printf("%.*s\n", end - start, line + start);
+                if (flags & FLAG_ONLY_MATCHING_PARTS) {
+                    int start = ovector[0];
+                    int end = ovector[1];
+                    printf("%.*s\n", end - start, line + start);
+                } else {
+                    printf("%s", line);
+                }
             } else {
-                printf("%s", line);
+                match_count++;
+                if (flags & FLAG_COUNT_ONLY) {
+                    break;
+                } else if (flags & FLAG_MATCHING_FILES_ONLY) {
+                    if (flags & FLAG_SUPPRESS_ERRORS) {
+                        printf("%s\n", filename);
+                        fclose(file);
+                        return;
+                    } else {
+                        break;
+                    }
+                } else if (flags & FLAG_DISPLAY_LINE_NUMBER) {
+                    printf("%d:", line_number);
+                }
+
+                if (flags & FLAG_ONLY_MATCHING_PARTS) {
+                    int start = ovector[0];
+                    int end = ovector[1];
+                    printf("%.*s\n", end - start, line + start);
+                } else {
+                    printf("%s", line);
+                }
             }
-        }
 
         line_number++;        // printf("konec");
     }
+    }
+    
 
     if (flags & FLAG_COUNT_ONLY) {
         printf("%d\n", match_count);
@@ -235,47 +271,57 @@ int main(int argc, char *argv[]) {
         display_usage();
         return EXIT_FAILURE;
     }
-if (flags & FLAG_FROM_FILE) {
+
+    int flags_count = 0;
+    int file_count = 0;
+
     for (int i = 1; i < argc; i++) {
-        if (argv[i - 1][0] == '-' && argv[i - 1][1] == 'f') {
+        if (( (argv[i][0] == '-' && argv[i][1] == 'f' ) || (argv[i - 1][0] == '-' && argv[i - 1][1] == 'f' ) ) 
+            ||( (argv[i][0] == '-' && argv[i][1] == 'e' ) || (argv[i - 1][0] == '-' && argv[i - 1][1] == 'e' ) )
+            || argv[i][0] == '-' || (pattern == argv[1])) {
             continue;
         }
-        else if (argv[i][0] != '-') {
-            int flag_exit = 1;
+        file_count++;
+    }
 
-            for (int j = 0; argv[i][j] != '\0'; j++) {
-                if (argv[i][j] == '-' && (j == 0 || argv[i][j + 1] == 'f' || (i > 0 && argv[i - 1][0] == '-' && argv[i - 1][1] == 'f'))) {
-                    flag_exit = 0;
+    if (flags & FLAG_FROM_FILE) {
+        for (int i = 1; i < argc; i++) {
+            if (argv[i - 1][0] == '-' && argv[i - 1][1] == 'f') {
+                continue;
+            }
+            else if (argv[i][0] != '-') {
+                int flag_exit = 1;
 
-                    // Если флаг '-f' обнаружен, пропускаем следующий аргумент
-                    if (argv[i][j + 1] == 'f' && argv[i][j + 2] != '\0') {
-                        i++;
+                for (int j = 0; argv[i][j] != '\0'; j++) {
+                    if (argv[i][j] == '-' && (j == 0 || argv[i][j + 1] == 'f' || (i > 0 && argv[i - 1][0] == '-' && argv[i - 1][1] == 'f'))) {
+                        flag_exit = 0;
+
+                        // Если флаг '-f' обнаружен, пропускаем следующий аргумент
+                        if (argv[i][j + 1] == 'f' && argv[i][j + 2] != '\0') {
+                            i++;
+                        }
+                        break;
                     }
-                    break;
+                }
+
+                // printf("%d = flag\n", flag_exit);
+
+                if (!flag_exit) {
+                    continue;
+                } else {
+                    // printf("%s на вход\n", argv[i]);
+                    grep_file(argv[i], pattern, file_count);
                 }
             }
-
-            // printf("%d = flag\n", flag_exit);
-
-            if (!flag_exit) {
-                continue;
-            } else {
-                printf("%s на вход\n", argv[i]);
-                grep_file(argv[i], pattern);
-            }
         }
-    }
-}
-
-
-    else if (file_arg_start == argc) {
+    } else if (file_arg_start == argc) {
         // No file provided, read from stdin
-        grep_file("/dev/stdin", pattern);
+        grep_file("/dev/stdin", pattern, file_count);
                         
     } else {
         // Display each specified file
         for (int i = file_arg_start; i < argc; i++) {
-        grep_file(argv[i], pattern);
+        grep_file(argv[i], pattern, file_count);
         }
     }
     // printf("%d = file_arg_start", file_arg_start);
