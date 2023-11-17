@@ -105,3 +105,108 @@ grep: CC : No such file or directory
 8:clean:
 9:	rm -f s21_grep
 grep: grep : No such file or directory
+makefile:CC = gcc
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+Unknown option: -e
+Usage: s21_grep [options] pattern [file...]
+Options:
+  -i                      ignore case distinctions in both the PATTERN and the input files
+  -v                      select non-matching lines
+  -c                      print only a count of matching lines per FILE
+  -l                      print only names of FILEs containing matches
+  -n                      print line number with output lines
+  -h                      suppress the prefixing of file names on output
+  -s                      suppress error messages about nonexistent or unreadable files
+  -f file                 read patterns from file
+  -o                      print only the matched (non-empty) parts of a matching line
+makefile:CC = gcc
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+2
+1
+makefile
+makefile:1:CC = gcc
+makefile:6:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:gc
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:1:CC = gcc
+makefile:6:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile
+Unknown option: -e
+Usage: s21_grep [options] pattern [file...]
+Options:
+  -i                      ignore case distinctions in both the PATTERN and the input files
+  -v                      select non-matching lines
+  -c                      print only a count of matching lines per FILE
+  -l                      print only names of FILEs containing matches
+  -n                      print line number with output lines
+  -h                      suppress the prefixing of file names on output
+  -s                      suppress error messages about nonexistent or unreadable files
+  -f file                 read patterns from file
+  -o                      print only the matched (non-empty) parts of a matching line
+makefile
+Unknown option: -e
+Usage: s21_grep [options] pattern [file...]
+Options:
+  -i                      ignore case distinctions in both the PATTERN and the input files
+  -v                      select non-matching lines
+  -c                      print only a count of matching lines per FILE
+  -l                      print only names of FILEs containing matches
+  -n                      print line number with output lines
+  -h                      suppress the prefixing of file names on output
+  -s                      suppress error messages about nonexistent or unreadable files
+  -f file                 read patterns from file
+  -o                      print only the matched (non-empty) parts of a matching line
+makefile:
+makefile:
+makefile:
+makefile:
+makefile:
+makefile:
+makefile:
+grep.h:
+grep.h:
+grep.h:
+grep.h:
+grep.h:
+grep.h:
+makefile:CC
+makefile:CC
+2
+1
+CC = gcc
+	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:1:CC
+makefile:6:CC
+makefile
+makefile:2:CFLAGS = -Wall -Wextra -std=c99
+makefile:3:LDFLAGS = -lpcre
+makefile:4:
+makefile:5:s21_grep: grep.c grep.h
+makefile:7:
+makefile:8:clean:
+makefile:9:	rm -f s21_grep

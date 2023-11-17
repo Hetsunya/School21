@@ -111,3 +111,116 @@ makefile:5:s21_grep: grep.c grep.h
 makefile:7:
 makefile:8:clean:
 makefile:9:	rm -f s21_grep
+makefile:CC = gcc
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:CC = gcc
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:CC = gcc
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:2
+grep.h:0
+makefile
+makefile:1:CC = gcc
+makefile:6:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:CC = gcc
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:gc
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:1:CC = gcc
+makefile:6:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:CC = gcc
+makefile:CFLAGS = -Wall -Wextra -std=c99
+makefile:LDFLAGS = -lpcre
+makefile:
+makefile:s21_grep: grep.c grep.h
+makefile:	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:
+makefile:clean:
+makefile:	rm -f s21_grep
+grep.h:#ifndef GREP_H
+grep.h:#define GREP_H
+grep.h:
+grep.h:void print_usage();
+grep.h:
+grep.h:#endif
+makefile:CC
+makefile:cc
+makefile:CC
+makefile:2
+CC = gcc
+	$(CC) $(CFLAGS) -o s21_grep grep.c $(LDFLAGS)
+makefile:1:CC
+makefile:6:CC
+makefile
+makefile:2:CFLAGS = -Wall -Wextra -std=c99
+makefile:3:LDFLAGS = -lpcre
+makefile:4:
+makefile:5:s21_grep: grep.c grep.h
+makefile:7:
+makefile:8:clean:
+makefile:9:	rm -f s21_grep
