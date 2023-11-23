@@ -1,0 +1,23 @@
+my: No such file or directory
+data.txt:Hello, my name is Nikolay
+data.txt:Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.
+Hello, my name is Nikolay
+Hi, my name is Nadya.

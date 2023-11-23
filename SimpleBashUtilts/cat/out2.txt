@@ -1,0 +1,81 @@
+     1	sjdjsflj
+
+     2	fsfjlsaj
+     3			lsfjkfd
+
+     4	flkslfk
+
+
+
+
+
+     5	sdfashjfjask
+sjdjsflj$
+$
+fsfjlsaj$
+		lsfjkfd$
+$
+flkslfk$
+$
+$
+$
+$
+$
+sdfashjfjask$
+     1	sjdjsflj
+     2	
+     3	fsfjlsaj
+     4			lsfjkfd
+     5	
+     6	flkslfk
+     7	
+     8	
+     9	
+    10	
+    11	
+    12	sdfashjfjask
+sjdjsflj
+
+fsfjlsaj
+		lsfjkfd
+
+flkslfk
+
+sdfashjfjask
+sjdjsflj
+
+fsfjlsaj
+^I^Ilsfjkfd
+
+flkslfk
+
+
+
+
+
+sdfashjfjask
+sjdjsflj
+
+fsfjlsaj
+		lsfjkfd
+
+flkslfk
+
+
+
+
+
+sdfashjfjask
+-s-v-e: No such file or directory
+sjdjsflj
+
+fsfjlsaj
+		lsfjkfd
+
+flkslfk
+
+
+
+
+
+sdfashjfjask

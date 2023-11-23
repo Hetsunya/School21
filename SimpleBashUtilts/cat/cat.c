@@ -1,153 +1,99 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "cat.h"
+  #include "cat.h"
 
-int flags = 0;
+  int main(int argc, char *argv[]) {
+    char get_opt;
+    int error = 0, op_index = 0;
 
-void display_usage() {
-    printf("Usage: s21_cat [options] [file...]\n");
-    printf("Options:\n");
-    printf("  -b, --number-nonblank    numbers only non-empty lines\n");
-    printf("  -e                      implies -v but also display end-of-line characters as $\n");
-    printf("  -n, --number            number all output lines\n");
-    printf("  -s, --squeeze-blank    squeeze multiple adjacent blank lines\n");
-    printf("  -t                      implies -v but also display tabs as ^I\n");
-}
-
-int parse_flags(int argc, char *argv[]) {
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-') {
-            if (strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--number-nonblank") == 0) {
-                flags |= FLAG_NUMBER_NONBLANK;
-            } else if (strcmp(argv[i], "-e") == 0) {
-                flags |= FLAG_DISPLAY_EOL;
-            } else if (strcmp(argv[i], "-n") == 0 || strcmp(argv[i], "--number") == 0) {
-                flags |= FLAG_NUMBER_LINES;
-            } else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--squeeze-blank") == 0) {
-                flags |= FLAG_SQUEEZE_BLANK;
-            } else if (strcmp(argv[i], "-t") == 0) {
-                flags |= FLAG_DISPLAY_TABS;
-            } else {
-                printf("Unknown option: %s\n", argv[i]);
-                display_usage();
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            // File argument found, stop processing options
-            return i;
-        }
-    }
-    return argc;
-}
-
-void display_file(char *filename, int flags) {
-    FILE *file = fopen(filename, "r");
-    if (!file) {
-        perror("Error opening file");
-        exit(EXIT_FAILURE);
+    while (!error && (get_opt = getopt_long(argc, argv, ":benstvET", long_options,
+                                            &op_index)) != -1) {
+      switch (get_opt) {
+        case 'b':
+          options.b = 1;
+          options.n = 0;
+          break;
+        case 'e':
+          options.E = 1;
+          options.v = 1;
+          break;
+        case 't':
+          options.T = 1;
+          options.v = 1;
+          break;
+        case 'n':
+          options.n = !options.b;
+          break;
+        case 's':
+          options.s = 1;
+          break;
+        case 'v':
+          options.v = 1;
+          break;
+        case 'E':
+          options.E = 1;
+          break;
+        case 'T':
+          options.T = 1;
+          break;
+        default:
+          error = 1;
+          break;
+      }
     }
 
-    char line[1024];
-    int line_number = 0;
-    int prev_blank = 0;
-    int ncount = 0;
-
-    while (fgets(line, sizeof(line), file)) {
-        if (flags & FLAG_SQUEEZE_BLANK) {
-            if (line[0] == '\n') {
-                if (prev_blank) {
-                    continue;  // Skip multiple adjacent blank lines
-                }
-                prev_blank = 1;
-            } else {
-                prev_blank = 0;
-            }
-        }
-        
-        switch (flags) {
-            // -b 
-            case  FLAG_NUMBER_NONBLANK:
-                if (line[0] != '\n') {
-                        printf("\t%d", line_number + (1 - ncount));
-                        putchar(line[0]);
-                    }
-                else {
-                    ncount++;
-                    putchar('\n');
-                }
-
-                for (int i = 1; line[i] != '\0'; i++) {
-                        putchar(line[i]);
-                }
-                break;
-            // -e
-            case  FLAG_DISPLAY_EOL:
-                for (int i = 0; line[i] != '\0'; i++) {
-                    if (line[i] == '\n') {
-                        printf("$");
-                        putchar('\n');
-                    } else {
-                        putchar(line[i]);
-                    }
-                }
-                break;
-            // -t 
-            case FLAG_DISPLAY_TABS:
-                for (int i = 0; line[i] != '\0'; i++) {
-                    if (line[i] == '\t') {
-                        printf("^I");
-                    } else {
-                        putchar(line[i]);
-                    }
-                }
-                break;
-            // -n
-            case FLAG_NUMBER_LINES:
-                if (line[0] != '\n'){
-                    printf("     %d	", line_number + 1);
-                    putchar(line[0]);
-                }
-                    
-                else
-                    printf("     %d	\n", line_number + 1);
-                for (int i = 1; line[i] != '\0'; i++) {
-                        putchar(line[i]);
-                }
-                break;
-            // Add cases for other flag combinations
-
-            default:
-                if (flags & FLAG_NUMBER_NONBLANK) {
-                    printf("%d\t", line_number);
-                }
-                fputs(line, stdout);
-                if (flags & FLAG_DISPLAY_EOL) {
-                    printf("$");
-                }
-                break;
-        }
-
-        line_number++;
-    }
-
-    fclose(file);
-}
-
-
-int main(int argc, char *argv[]) {
-    int file_arg_start = parse_flags(argc, argv);
-
-    if (file_arg_start == argc) {
-        // No file provided, read from stdin
-        display_file("/dev/stdin", flags);
-    } else {
-        // Display each specified file
-        for (int i = file_arg_start; i < argc; i++) {
-            display_file(argv[i], flags);
-        }
-    }
-
+    if (!error) {
+      while (optind < argc) {
+        if (print_file(argv[optind]))
+          printf("%s: No such file or directory\n", argv[optind]);
+        optind++;
+      }
+    } else
+      printf("Error comandline argv!");
     return 0;
-}
- 
+  }
+
+  int print_file(char *filename) {
+    char ch = '\0';
+    int result;
+    int nlc = 1;  // new lines count
+    FILE *f = fopen(filename, "r");
+
+    !f ? (result = 0) : (result = 1);
+
+    while (result && feof(f) == 0 && (ch = fgetc(f)) != -1) {
+      if (ch == '\n' && options.s && nlc >= 2) {
+        ch = fgetc(f);
+        continue;
+      }
+
+      if (nlc && (options.n || (ch != '\n' && options.b)))
+        printf("%6d\t", ++count_lines);
+
+      if (options.E && ch == '\n') printf("$");
+
+      if (options.T && ch == '\t')
+        printf("^I");
+      else {
+        ch == '\n' ? nlc++ : (nlc = 0);
+        options.v ? non_print(ch) : printf("%c", ch);
+      }
+    }
+
+    if (result) fclose(f);
+
+    return !result;
+  }
+
+  void non_print(char c) {
+    if (c < -96)
+      printf("M-^%c", c + 192);
+    else if (c < 0)
+      printf("M-%c", c + 128);
+    else if (c == 9 || c == 10)
+      printf("%c", c);
+    else if (c < 32)
+      printf("^%c", c + 64);
+    else if (c < 127)
+      printf("%c", c);
+    else
+      printf("^?");
+  }
