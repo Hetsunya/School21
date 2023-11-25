@@ -1,30 +1,23 @@
-#ifndef SRC_CAT_S21_CAT_H_
-#define SRC_CAT_S21_CAT_H_
+#ifndef S21_CAT_H
+#define S21_CAT_H
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
-#define ERROR_01 "s21_cat: %s: No such file or directory\n"
-#define ERROR_02 "s21_cat: invalid option -- '%c'\n"
+#include <getopt.h>
+#include <unistd.h>
 
 typedef struct {
   int b;
-  int e;
   int n;
   int s;
-  int t;
   int v;
-  int newLine;
-  int counterB;
-  int counterS;
-  int emptyLine;
-  int numberFiles;
-} options;
+  int E;
+  int T;
+} flags;
 
-void s21_cat_programm(int argc, char **argv);
+extern struct option long_options[];
 
-int scanOptions(int argc, char **argv, options *config);
-FILE *printData(FILE *file, options *config);
+int print_file(char *filename, flags options, int *count_lines);
+void non_print(char c);
 
-#endif  // SRC_CAT_S21_CAT_H_
+#endif

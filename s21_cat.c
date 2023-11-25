@@ -1,94 +1,114 @@
 #include "s21_cat.h"
 
-int main(int argc, char **argv) {
-  s21_cat_programm(argc, argv);
+struct option long_options[] = {
+    {"number-nonblank", no_argument, 0, 'b'},
+    {"number", no_argument, 0, 'n'},
+    {"squeeze-blank", no_argument, 0, 's'},
+    {0, 0, 0, 0}};
+
+
+int main(int argc, char *argv[]) {
+  char get_opt;
+  int error = 0, op_index = 0;
+  int count_lines = 0;
+  flags options = {0, 0, 0, 0, 0, 0};
+
+  while (!error && (get_opt = getopt_long(argc, argv, ":benstvET", long_options,
+                                          &op_index)) != -1) {
+    switch (get_opt) {
+        case 'b':
+          options.b = 1;
+          options.n = 0;
+          break;
+        case 'e':
+          options.E = 1;
+          options.v = 1;
+          break;
+        case 't':
+          options.T = 1;
+          options.v = 1;
+          break;
+        case 'n':
+          options.n = !options.b;
+          break;
+        case 's':
+          options.s = 1;
+          break;
+        case 'v':
+          options.v = 1;
+          break;
+        case 'E':
+          options.E = 1;
+          break;
+        case 'T':
+          options.T = 1;
+          break;
+        default:
+          error = 1;
+          break;
+      }
+    }
+
+  if (!error) {
+    while (optind < argc) {
+      if (print_file(argv[optind], options, &count_lines))
+        printf("%s: No such file or directory\n", argv[optind]);
+      optind++;
+    }
+  } else {
+    printf("Error command line arguments!\n");
+  }
+
   return 0;
 }
 
-void s21_cat_programm(int argc, char **argv) {
-  if (argc > 1) {
-    options config = {0};
-    if (scanOptions(argc, argv, &config)) {
-      for (int x = (argc - config.numberFiles); x < argc; x += 1) {
-        FILE *file = fopen(argv[x], "r");
-        if (file != NULL)
-          fclose(printData(file, &config));
-        else
-          fprintf(stderr, ERROR_01, argv[x]);
+int print_file(char *filename, flags options, int *count_lines) {
+  char ch = '\0';
+  int result;
+  int nlc = 1;  // new lines count
+  FILE *f = fopen(filename, "r");
+
+  !f ? (result = 0) : (result = 1);
+  
+  while (result && (ch = fgetc(f)) != EOF) {
+      if (ch == '\n' && options.s && nlc > 1) {
+        ch = fgetc(f);
+        // if(ch != '\n') {
+        //   printf("%c", ch);
+        // } РАБОТАЕТ НО ЛОМАЕТ В ДРУГИХ МЕСТАХ XD );
+        continue;
+      }
+
+      if (nlc && (options.n || (ch != '\n' && options.b)))
+        printf("%6d\t", ++(*count_lines));
+
+      if (options.E && ch == '\n') printf("$");
+
+      if (options.T && ch == '\t')
+        printf("^I");
+      else {
+        ch == '\n' ? nlc++ : (nlc = 0);
+        options.v ? non_print(ch) : printf("%c", ch);
       }
     }
-  }
+
+
+  if (result) fclose(f);
+
+  return !result;
 }
 
-int scanOptions(int argc, char **argv, options *config) {
-  int indexStartFiles = 1, status = 1, x = 1;
-
-  for (; (x < argc && argv[x][0] == '-'); indexStartFiles = (x += 1)) {
-    if (!strcmp(argv[x], "-b") || !strcmp(argv[x], "--number-nonblank")) {
-      config->b = (config->n = 0) + 1;
-    } else if (!strcmp(argv[x], "-s") || !strcmp(argv[x], "--squeeze-blank")) {
-      config->s = 1;
-    } else if (!strcmp(argv[x], "-n") || !strcmp(argv[x], "--number")) {
-      config->n = config->b ? 0 : 1;
-    } else if (!strcmp(argv[x], "-T")) {
-      config->t = 1;
-    } else if (!strcmp(argv[x], "-v")) {
-      config->v = 1;
-    } else if (!strcmp(argv[x], "-t")) {
-      config->t = 1;
-      config->v = 1;
-    } else if (!strcmp(argv[x], "-e")) {
-      config->e = 1;
-      config->v = 1;
-    } else if (!strcmp(argv[x], "-E")) {
-      config->e = 1;
-    } else {
-      fprintf(stderr, ERROR_02, argv[x][1]);
-      status = 0;
-    }
+  void non_print(char c) {
+    if (c < -96)
+      printf("M-^%c", c + 192);
+    else if (c < 0)
+      printf("M-%c", c + 128);
+    else if (c == 9 || c == 10)
+      printf("%c", c);
+    else if (c < 32)
+      printf("^%c", c + 64);
+    else if (c < 127)
+      printf("%c", c);
+    else
+      printf("^?");
   }
-
-  config->numberFiles = argc - indexStartFiles;
-
-  return status;
-}
-
-FILE *printData(FILE *file, options *config) {
-  for (char sym = '0'; (sym = getc(file)) != EOF;) {
-    config->emptyLine = 0;
-    if (config->s && config->counterS == 0 && sym == '\n') {
-      config->counterS += 1;
-    } else if (config->counterS != 0 && sym == '\n') {
-      config->counterS += 1;
-      config->emptyLine = 1;
-    } else if (config->counterS > 1 && sym != '\n') {
-      config->counterS = 0;
-      config->e ? printf("$\n") : printf("\n");
-      if (config->n != 0) printf("%6d\t", config->n++);
-    } else {
-      config->counterS = 0;
-    }
-    if (config->n != 0 || config->b != 0) {
-      if (config->newLine == 1 && !(config->newLine = 0))
-        printf("%6d\t", config->n++);
-      if (config->n == 1) printf("%6d\t", config->n++);
-      if (config->b == 1) printf("%6d\t", config->b++);
-      if (sym == '\n' && config->n != 0 && config->emptyLine == 0)
-        config->newLine = 1;
-      if (sym == '\n' && config->b != 0) config->counterB += 1;
-      if (sym != '\n' && config->counterB != 0 && config->counterS == 0)
-        if (!(config->counterB = 0)) printf("%6d\t", config->b++);
-    }
-    if (sym == '\n' && config->e && config->emptyLine == 0) printf("$");
-    if (config->v) {
-      if (sym < 32 && sym != 9 && sym != 10)
-        if (sym += 64) printf("^");
-      if (sym == 127)
-        if ((sym = '?')) printf("^");
-    }
-    if (config->t && sym == '\t')
-      if ((sym = 'I')) printf("^");
-    if (config->emptyLine == 0) printf("%c", sym);
-  }
-  return file;
-}
