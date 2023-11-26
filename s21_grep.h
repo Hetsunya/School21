@@ -17,12 +17,10 @@ typedef struct {
   int h;
   int s;
   int f;
+  char *f_argument;
   int o;
 } flags;
 
-flags options = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-
-int print_matches(regex_t *templates, int count_templates, char *filename);
-int read_file_templates(regex_t *templates, int *count_templates,
-                        char *filename);
+int print_matches(regex_t *templates, int count_templates, char *filename, flags options);
+int read_file_templates(regex_t *templates, int *count_templates, char *filename, flags options);
 void free_templates(regex_t *templates, int count);
